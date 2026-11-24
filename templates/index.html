@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Caminata Gemba — Automatizador de Presentación</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <img src="/static/logo.png" alt="Logo empresa" class="brand-logo" width="44" height="36">
+        <div>
+          <h1>Caminata Gemba</h1>
+          <p id="file-summary" class="file-summary">Cargando archivo…</p>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <label for="pptx-upload-input" class="btn btn-secondary">
+          Cargar otro .pptx
+        </label>
+        <input id="pptx-upload-input" type="file" accept=".pptx" class="visually-hidden">
+        <button id="btn-open-folder" type="button" class="btn btn-secondary">Abrir carpeta</button>
+        <a href="/api/download-pptx" class="btn btn-primary" download>Descargar .pptx</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="status-banner" class="status-banner" role="status" aria-live="polite" hidden></div>
+
+    <nav class="tabs" aria-label="Modos de trabajo">
+      <button id="tab-btn-antes" type="button" class="tab-btn active" aria-controls="panel-antes" aria-expanded="true">
+        1. Nueva Caminata (Miércoles · ANTES)
+      </button>
+      <button id="tab-btn-despues" type="button" class="tab-btn" aria-controls="panel-despues" aria-expanded="false">
+        2. Cargar Soluciones (DESPUÉS)
+      </button>
+    </nav>
+
+    <!-- PANEL 1: NUEVA CAMINATA (ANTES) -->
+    <section id="panel-antes" class="panel">
+      <form id="walk-form" action="/api/add-walk" method="POST" aria-labelledby="heading-antes" novalidate>
+        <div class="split-grid">
+          <div class="card">
+            <h2 id="heading-antes">Datos de la Portada</h2>
+
+            <div class="form-group">
+              <label for="walk-date">Fecha de la caminata <span aria-hidden="true">*</span></label>
+              <input id="walk-date" name="date" type="date" required>
+            </div>
+
+            <div class="form-group">
+              <label for="walk-sector">Ubicación / Sector <span aria-hidden="true">*</span></label>
+              <input id="walk-sector" name="sector" type="text" list="sectores-list" required placeholder="Ej. MAQUINADO" enterkeyhint="next">
+              <datalist id="sectores-list">
+                <option value="Embalaje - Pulido"></option>
+                <option value="LIVING"></option>
+                <option value="MAQUINADO"></option>
+                <option value="ARMADO"></option>
+                <option value="MAQUINADO - ARMADO"></option>
+                <option value="MAQUINADO – ESQUELETOS"></option>
+              </datalist>
+            </div>
+
+            <div class="form-group">
+              <label for="walk-schedule">Turno &amp; Horario <span aria-hidden="true">*</span></label>
+              <input id="walk-schedule" name="schedule" type="text" list="horarios-list" value="Mañana · 08:00 - 09:00 AM" required enterkeyhint="next">
+              <datalist id="horarios-list">
+                <option value="Mañana · 08:00 - 09:00 AM"></option>
+                <option value="Mañana · 10:35 - 11:35 AM"></option>
+                <option value="Tarde · 14:00 - 15:00 PM"></option>
+              </datalist>
+            </div>
+
+            <div class="form-group">
+              <label for="walk-owner">Encargado del sector <span aria-hidden="true">*</span></label>
+              <input id="walk-owner" name="owner" type="text" list="encargados-list" required placeholder="Ej. ARIEL DEHESA" enterkeyhint="done">
+              <datalist id="encargados-list">
+                <option value="Tino Varela"></option>
+                <option value="ARIEL CARANDINO"></option>
+                <option value="ARIEL DEHESA"></option>
+                <option value="LUCAS LUQUE"></option>
+                <option value="ARIEL DEHESA – LUCAS LUQUE"></option>
+                <option value="ARIEL DEHESA – ARIEL CARANDINO"></option>
+              </datalist>
+            </div>
+          </div>
+
+          <div class="card preview-card">
+            <h2>Vista previa de portada</h2>
+            <p class="hint">Así se va a insertar la diapositiva separadora en el PowerPoint.</p>
+            <canvas id="cover-canvas" width="1800" height="809" class="cover-preview"></canvas>
+          </div>
+        </div>
+
+        <div class="card upload-section">
+          <div class="section-header">
+            <div>
+              <h2>Fotos del ANTES</h2>
+              <p class="hint">Arrastrá todas las fotos que bajaste de WhatsApp. Se comprimen y rotan solas.</p>
+            </div>
+            <span id="antes-count-badge" class="badge">0 fotos</span>
+          </div>
+
+          <div id="antes-dropzone" class="dropzone">
+            <input id="antes-files-input" name="photos" type="file" accept="image/*" multiple class="visually-hidden">
+            <label for="antes-files-input" class="dropzone-label">
+              <strong>Hacé clic para elegir fotos</strong> o arrastralas y soltalas acá
+              <span class="hint">Podés seleccionar 10, 20 o más fotos de una sola vez</span>
+            </label>
+          </div>
+
+          <div id="antes-grid" class="photo-grid"></div>
+
+          <div class="form-actions">
+            <button id="btn-clear-antes" type="button" class="btn btn-secondary">Limpiar fotos</button>
+            <button id="btn-submit-walk" type="submit" class="btn btn-primary btn-lg">
+              Agregar caminata al PowerPoint
+            </button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- PANEL 2: CARGAR SOLUCIONES (DESPUÉS) -->
+    <section id="panel-despues" class="panel" hidden>
+      <div class="card">
+        <div class="despues-toolbar">
+          <div class="form-group inline-group">
+            <label for="walk-selector">Caminata</label>
+            <select id="walk-selector" name="walk_selector"></select>
+          </div>
+
+          <div class="checkbox-inline">
+            <input id="filter-pending" type="checkbox" checked>
+            <label for="filter-pending">Mostrar solo pendientes (sin DESPUÉS)</label>
+          </div>
+
+          <button id="btn-refresh-walks" type="button" class="btn btn-secondary">Actualizar</button>
+        </div>
+
+        <div id="walk-cover-strip" class="walk-cover-strip" hidden>
+          <img id="walk-cover-img" alt="Portada de la caminata seleccionada">
+          <div id="walk-stats" class="walk-stats"></div>
+        </div>
+      </div>
+
+      <div id="despues-list" class="despues-list"></div>
+
+      <div id="despues-save-bar" class="save-bar" hidden>
+        <span id="pending-changes-text">0 cambios listos para guardar</span>
+        <button id="btn-save-despues" type="button" class="btn btn-primary btn-lg">
+          Guardar soluciones en PowerPoint
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
